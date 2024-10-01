@@ -97,7 +97,7 @@ theme(:gruvbox_light)
     xlabel = "Winner Rating Band", 
     ylabel = "Number of Turns", 
     legend = false, 
-    title = "Higher Ranked Players Take Their Time Winning in Chess!\nLichess Chess Dataset\n\n",
+    title = "Do Higher Ranked Players Take Their Time Winning in Chess?\nLichess Chess Dataset\n\n",
     size = (1000, 565), 
     xrotation = 40, 
     margins = 10mm, 
