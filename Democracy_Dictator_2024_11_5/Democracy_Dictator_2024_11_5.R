@@ -81,7 +81,23 @@ democracy_data <- tuesdata$democracy_data
 
 # filter down to the year 2020 to see most recent trends
 democracy_data_2020 <- democracy_data %>% 
-  filter(year == 2020)
+  filter(year == 2020) %>%
+  mutate(regime_category = replace_na(regime_category, "Not Documented"),
+    regime_group = case_when(
+      regime_category %in% "Not Documented" ~ "Not Documented (1)",
+      regime_category %in% c(
+        "Parliamentary democracy",
+        "Presidential democracy",
+        "Mixed democratic"
+      ) ~ "Democracies (115)",
+      regime_category %in% c(
+        "Civilian dictatorship",
+        "Military dictatorship",
+        "Royal dictatorship"
+      ) ~ "Dictatorships (76)",
+      TRUE ~ "Territories/Dependencies (16)"
+    ),
+  )
 
 ###_____________________________________________________________________________
 ### EDA
@@ -142,7 +158,68 @@ count_plot <- democracy_counts_2020 %>%
     plot.caption = element_textbox_simple()
   )
 
-# custom save function!
 ggsave(filename = "democracy_count_plot.png", plot = count_plot, path = getwd(), width = 8 * (16/9), height = 8, units = "in", dpi = 300)
 
+###_____________________________________________________________________________
+### Use the tigris package to create a map of countries colored by regime
+### 
+###_____________________________________________________________________________
+
+library(sf)
+library(rnaturalearth)
+library(rnaturalearthdata)
+
+# Load the world map shapefile
+world <- ne_countries(scale = "medium", returnclass = "sf")
+
+# Join democracy data to world shapefile on country codes
+world_democracy <- world %>%
+  left_join(democracy_data_2020, by = c("iso_a3" = "country_code")) %>% 
+  mutate(regime_group = replace_na(regime_group, "Not in Data"),
+         regime_group = factor(regime_group, levels = c("Democracies (115)", "Dictatorships (76)", "Territories/Dependencies (16)", "Not Documented (1)", "Not in Data"))
+         )
+
+# get counts of regime groups
+world_democracy %>% 
+  count(regime_group, sort = T)
+
+# Plot the map with regime categories
+world_democracy_map <- ggplot(data = world_democracy) +
+  geom_sf(aes(fill = regime_group), color = "darkgray") +
+  labs(title = "Power and People: Examining the World's Political Regimes",
+       subtitle = "Data: Xavier Marquez Democracy and Dictatorship Dataset",
+       caption = social_caption,
+       fill = "Regime Category (count)") +
+  theme_cleaner(base_size = 12,
+                base_color = "darkslategray", 
+                title_text_size = 20,
+                subtitle_text_size = 18,
+                base_family = "Work Sans"
+                ) + 
+  scale_fill_manual(
+    values = c(
+      "Democracies (115)" = "#377EB8",
+      "Dictatorships (76)" = "#FF7F00",
+      "Territories/Dependencies (16)" = "#4DAF4A",
+      "Not Documented (1)" = "#999999",
+      "Not in Data" = "#333333"
+    )
+  ) +  
+  theme(legend.position = "inside",
+        legend.position.inside = c(0.20, 0.35),
+        plot.caption = element_textbox_simple(size = 15),
+        panel.background = element_rect(fill = "lightblue", color = NA),
+        plot.background = element_rect(fill = "lightblue", color = NA)
+        )
+
+# save!
+ggsave(
+  filename = "world_democracy_map.png",
+  plot = world_democracy_map,
+  path = getwd(),
+  width = 8 * (16 / 9),
+  height = 8,
+  units = "in",
+  dpi = 300
+)
 
