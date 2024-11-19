@@ -43,25 +43,42 @@ end
 ### Let's examine dialogue density over time from Bob's Burgers
 ###_____________________________________________________________________________
 
-# plot theme
-theme(:gruvbox_light)  # Apply gruvbox theme
+# add package to handle images in plots
+Pkg.add("Images")
+using Images
+
+# Fetch the image from the URL
+img_url = "https://github.com/rfordatascience/tidytuesday/blob/ba56073e03b2ba931499ba13aaf0531f099e5b31/data/2024/2024-11-19/bobsburgersR.png?raw=true"
+
+img = Images.load(HTTP.get(img_url).body)
 
 # pivot the dataframe longer using the exclamation and question mark fields
-
 episode_metrics_pivot = @chain begin episode_metrics_time
     stack([:question_ratio, :exclamation_ratio])
 end
 
-# use a line plot to show the prevalence of excitement or throught provoking
+# plot theme
+theme(:rose_pine)  # Apply rose_pine theme via PlotThemes
+
+# Use a line plot to show the prevalence of excitement or thought-provoking
 # questions in Bob's Burgers over time
-
 questions_or_exclamations_plot = @df episode_metrics_pivot plot(
-    :episode_number,
-    :value,
-    group = :variable,
-    grid = false,
-    legend_position = :outsidetopright,
-    legend_title = "Punctuation",
-    title="Question Marks vs. Exclamation Points: The Battle of Bob's Burgers Dialogue!",
-
+    :episode_number,  # x-axis
+    :value,           # y-axis
+    group=:variable,  # Different lines for each group
+    color=[:pink :orange],  # Custom colors for each line
+    linestyle=[:solid :dot],  # Optional: Different line styles for clarity
+    grid=false,
+    legend_position=:bottomleft,
+    title="Bob's Burgers Dialogue in Episodes 1-272\nIs it curiosity or excitement fueling the Belchers' banter?\n",
+    xlabel="",
+    ylabel="",
+    label = ["exclamation ratio" "question ratio" ],
+    titlefontsize = 12,
+    title_align = :left,
+    fg_legend = :transparent,
+    bg_legend = :transparent
 )
+
+# Add the image as an annotation
+annotate!(10, 0.8, text(" ", 8, :white, 0, 0), img)  # Adjust (x, y) for positioning
